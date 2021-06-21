@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Hostname lookup</title>
+</head>
+<body onload='generateTable()'>
+<h2>Scanned hosts</h2>
+<table>
+  <thead>
+    <th colspan="2">
+        Filter results (space separated)
+    </th>
+  </thead>
+  <tbody>
+    <tr>
+        <td>Ignore status codes</td>
+        <td><input id="ignore_status" /></td>
+    </tr>
+    <tr>
+        <td>Ignore response length</td>
+        <td><input id="ignore_length" /></td>
+    </tr>
+    <tr>
+        <td><button onclick="generateTable()">Apply filters</button></td>
+        <td><button onclick="clearFilters()">Clear filters</button></td>
+    </tr>
+  </tbody>
+</table>
+<br/><br/>
+<table id='results_table'></table>
+<style>
+table {
+  border: 1px solid #000;
+  border-collapse: collapse;
+}
+
+th, td {
+  text-align: left;
+  vertical-align: top;
+  border: 1px solid #000;
+  padding: 0.3em;
+}
+
+caption {
+  padding: 0.3em;
+}
+</style>
+<script>
+function clearFilters() {
+  document.getElementById('ignore_status').value = '';
+  document.getElementById('ignore_length').value = '';
+  generateTable();
+}
+
+function generateTableHead(table) {
+  let thead = table.createTHead();
+  let row = thead.insertRow();
+  let header_values = ['Hostname', 'HTTP Link', 'HTTPS Link', 'HTTP code',
+                       'HTTP length', 'HTTPS code', 'HTTPS length']
+  for (let element of header_values) {
+    let th = document.createElement("th");
+    let text = document.createTextNode(element);
+    th.appendChild(text);
+    row.appendChild(th);
+  }
+}
+
+function generateTableBody(table, data, statusIgnoreList, lengthIgnoreList) {
+  for (let element of data) {
+    // Check if element should be ignored
+    let responded_http = element.http_code !== null;
+    let responded_https = element.https_code !== null;
+    let ignore_http = !responded_http || statusIgnoreList.includes(element.http_code) ||
+      lengthIgnoreList.includes(element.http_len);
+    let ignore_https = !responded_https || statusIgnoreList.includes(element.https_code) ||
+      lengthIgnoreList.includes(element.https_len);
+
+    if (ignore_http && ignore_https) {
+      continue;
+    }
+
+    let row = table.insertRow();
+
+    // Hostname
+    cell = row.insertCell();
+    text = document.createTextNode(element.host);
+    cell.appendChild(text);
+
+    // HTTP link
+    cell = row.insertCell();
+    if (responded_http) {
+      newHtmlElement = document.createElement('a');
+      if (ignore_http) {
+        elementText = document.createTextNode('-');
+      }
+      else {
+        elementText = document.createTextNode('HTTP');
+      }
+      newHtmlElement.setAttribute('href', 'http://'+element.host);
+      newHtmlElement.appendChild(elementText);
+    }
+    else {
+      newHtmlElement = document.createTextNode('No response');
+    }
+    cell.appendChild(newHtmlElement);
+
+    // HTTPS link
+    cell = row.insertCell();
+    if (responded_https) {
+      newHtmlElement = document.createElement('a');
+      if (ignore_https) {
+        elementText = document.createTextNode('-');
+      }
+      else {
+        elementText = document.createTextNode('HTTPS');
+      }
+      newHtmlElement.setAttribute('href', 'https://'+element.host);
+      newHtmlElement.appendChild(elementText);
+    }
+    else {
+      newHtmlElement = document.createTextNode('No response');
+    }
+    cell.appendChild(newHtmlElement);
+
+    // HTTP code
+    cell = row.insertCell();
+    if (responded_http && !ignore_http) {
+      newHtmlElement = document.createElement('a');
+      elementText = document.createTextNode(element.http_code);
+      newHtmlElement.setAttribute('href', 'javascript:addIgnoreStatus(' + element.http_code + ')');
+      newHtmlElement.appendChild(elementText);
+    }
+    else {
+      newHtmlElement = document.createTextNode('-');
+    }
+    cell.appendChild(newHtmlElement);
+
+    // HTTP length
+    cell = row.insertCell();
+    if (responded_http && !ignore_http) {
+      newHtmlElement = document.createElement('a');
+      elementText = document.createTextNode(element.http_len);
+      newHtmlElement.setAttribute('href', 'javascript:addIgnoreLength(' + element.http_len + ')');
+      newHtmlElement.appendChild(elementText);
+    }
+    else {
+      newHtmlElement = document.createTextNode('-');
+    }
+    cell.appendChild(newHtmlElement);
+
+    // HTTPS code
+    cell = row.insertCell();
+    if (responded_https && !ignore_https) {
+      newHtmlElement = document.createElement('a');
+      elementText = document.createTextNode(element.https_code);
+      newHtmlElement.setAttribute('href', 'javascript:addIgnoreStatus(' + element.https_code + ')');
+      newHtmlElement.appendChild(elementText);
+    }
+    else {
+      newHtmlElement = document.createTextNode('-');
+    }
+    cell.appendChild(newHtmlElement);
+
+    // HTTPS length
+    cell = row.insertCell();
+    if (responded_https && !ignore_https) {
+      newHtmlElement = document.createElement('a');
+      elementText = document.createTextNode(element.https_len);
+      newHtmlElement.setAttribute('href', 'javascript:addIgnoreLength(' + element.https_len + ')');
+      newHtmlElement.appendChild(elementText);
+    }
+    else {
+      newHtmlElement = document.createTextNode('-');
+    }
+    cell.appendChild(newHtmlElement);
+  }
+}
+
+function addIgnoreStatus(newStatus) {
+  let ignoredStatuses = getIgnoreStatusCodes();
+  if (!ignoredStatuses.includes(newStatus)) {
+    ignoredStatuses.push(newStatus);
+    let newValue = ignoredStatuses.toString().replaceAll(",", " ");
+    document.getElementById('ignore_status').value = newValue;
+  }
+  generateTable();
+}
+
+function addIgnoreLength(newLength) {
+  let ignoredLengths = getIgnoreResponseLengths();
+  if (!ignoredLengths.includes(newLength)) {
+    ignoredLengths.push(newLength);
+    let newValue = ignoredLengths.toString().replaceAll(",", " ");
+    document.getElementById('ignore_length').value = newValue;
+  }
+  generateTable();
+}
+
+function getIgnoreStatusCodes() {
+  let statusStr = document.getElementById('ignore_status').value;
+  if (statusStr === "") {
+    return [];
+  }
+  let statusIntList = statusStr.split(' ').map((x)=>{return parseInt(x)});
+  return statusIntList;
+}
+
+function getIgnoreResponseLengths() {
+  let lengthStr = document.getElementById('ignore_length').value;
+  if (lengthStr === "") {
+    return [];
+  }
+  let lengthIntList = lengthStr.split(' ').map((x)=>{return parseInt(x)});
+  return lengthIntList;
+}
+
+function generateTable() {
+  let table = document.getElementById('results_table');
+  table.innerHTML = '';
+  generateTableHead(table);
+  let statusIgnoreList = getIgnoreStatusCodes();
+  let lengthIgnoreList = getIgnoreResponseLengths();
+  generateTableBody(table, results, statusIgnoreList, lengthIgnoreList);
+}
+
+results = [];
+</script>
