@@ -57,7 +57,7 @@ function generateTableHead(table) {
   let thead = table.createTHead();
   let row = thead.insertRow();
   let header_values = ['Hostname', 'HTTP Link', 'HTTPS Link', 'HTTP code',
-                       'HTTP length', 'HTTPS code', 'HTTPS length']
+                       'HTTP length', 'HTTPS code', 'HTTPS length', 'HTTP title', 'HTTPS title']
   for (let element of header_values) {
     let th = document.createElement("th");
     let text = document.createTextNode(element);
@@ -169,6 +169,26 @@ function generateTableBody(table, data, statusIgnoreList, lengthIgnoreList) {
       elementText = document.createTextNode(element.https_len);
       newHtmlElement.setAttribute('href', 'javascript:addIgnoreLength(' + element.https_len + ')');
       newHtmlElement.appendChild(elementText);
+    }
+    else {
+      newHtmlElement = document.createTextNode('-');
+    }
+    cell.appendChild(newHtmlElement);
+
+    // HTTP title
+    cell = row.insertCell();
+    if (responded_http && !ignore_http) {
+      newHtmlElement = document.createTextNode(element.http_title);
+    }
+    else {
+      newHtmlElement = document.createTextNode('-');
+    }
+    cell.appendChild(newHtmlElement);
+
+    // HTTPS title
+    cell = row.insertCell();
+    if (responded_https && !ignore_https) {
+      newHtmlElement = document.createTextNode(element.https_title);
     }
     else {
       newHtmlElement = document.createTextNode('-');
