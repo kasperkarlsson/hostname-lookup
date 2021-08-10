@@ -1,3 +1,4 @@
+import datetime
 import html
 import re
 import requests
@@ -6,7 +7,7 @@ import urllib3
 
 class Settings:
     FILENAME = "hostnames.txt"
-    OUTPUT_FILE = "hosts.html"
+    OUTPUT_FILE = f"hosts_{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.html"
     REPORT_TEMPLATE_FILE = "resources/report_template.html"
     MAX_TITLE_LENGTH = 50
 
