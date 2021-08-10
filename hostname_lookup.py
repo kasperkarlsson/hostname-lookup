@@ -95,4 +95,7 @@ def parse_file(filename: str) -> list:
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n# Interrupted by user")
